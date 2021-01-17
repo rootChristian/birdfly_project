@@ -1,0 +1,120 @@
+﻿<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Cicogna</title>
+</head>
+<script src="../js/pixi.min.js"></script>
+<body>
+    <script>
+        window.VIDEO_WIDTH = 1920;
+        window.VIDEO_HEIGHT = 1080;
+        window.VIDEO_RATIO = (window.VIDEO_WIDTH / window.VIDEO_HEIGHT);
+        window.onresize = Resize.bind(this);
+        let Application = PIXI.Application,
+        Container = PIXI.Container,
+        loader = PIXI.loader,
+        resources = PIXI.loader.resources,
+        TextureCache = PIXI.utils.TextureCache,
+        Sprite = PIXI.Sprite,
+        Rectangle = PIXI.Rectangle;
+
+
+        let app = new Application({
+            antialias: true,
+            transparent: true,
+            resolution: 1,
+            "width": window.VIDEO_WIDTH,
+            "height": window.VIDEO_HEIGHT,
+            "transparent": true
+        }
+        ); 
+        app.renderer.view.style.position = "absolute";
+        app.renderer.view.style.display = "block";
+        app.renderer.autoResize = true;
+        app.renderer.resize(window.innerWidth, window.innerHeight);
+        window.Renderer = app.renderer;
+
+        document.body.appendChild(app.view);
+
+        let spriteBackground = PIXI.Sprite.from("BackGame.png");
+        spriteBackground.scale = new PIXI.Point(1, 1);
+        app.stage.addChild(spriteBackground);
+
+        PIXI.loader.add("birdfly.json").load(Setup);
+
+        let animatedSprite;
+        var bezier = null;
+        var indexBezier = 0;
+        function Setup() {
+            let sheet = PIXI.loader.resources["birdfly.json"].spritesheet;
+            animatedSprite = new PIXI.AnimatedSprite(sheet.animations["FL"]);
+            animatedSprite.scale = new PIXI.Point(0.5, 0.5);
+            animatedSprite.play();
+            app.stage.addChild(animatedSprite);
+
+            bezier = GetMoveBezier2(-200, 100, 500, 300, 1600, 200, 300);
+
+            
+            Resize();
+            Update();
+        }
+
+        function GetMoveBezier2(x1, y1, x2, y2, x3, y3, numberOfPoints) {
+            function pointOnQuadraticBezier(cp, t) {
+                let result = {};
+
+                result.X = (1 - t) * (1 - t) * cp[0].X + 2 * t * (1 - t) * cp[1].X + t * t * cp[2].X;
+                result.Y = (1 - t) * (1 - t) * cp[0].Y + 2 * t * (1 - t) * cp[1].Y + t * t * cp[2].Y;
+                return result;
+            }
+
+            let cp = [];
+            cp.push({ X: x1, Y: y1 });
+            cp.push({ X: x2, Y: y2 });
+            cp.push({ X: x3, Y: y3 });
+
+            let ArrayMove = [];
+            let dt = 1 / (numberOfPoints - 1);
+            for (let i = 0; i < numberOfPoints; i++) {
+                ArrayMove.push(pointOnQuadraticBezier(cp, i * dt));
+            }
+
+            return ArrayMove;
+        }
+
+        function Resize() {
+            var newWidth = window.innerWidth;
+            var newHeight = window.innerHeight;
+            var newWidthToHeight = newWidth / newHeight;
+
+            if (newWidthToHeight > window.VIDEO_RATIO) {
+                newWidth = newHeight * window.VIDEO_RATIO;
+                window.Renderer.view.style.width = newWidth + 'px';
+                window.Renderer.view.style.height = newHeight + 'px';
+
+            } else {
+                newHeight = newWidth / window.VIDEO_RATIO;
+                window.Renderer.view.style.width = newWidth + 'px';
+                window.Renderer.view.style.height = newHeight + 'px';
+            }
+
+        }
+
+        function Update() {
+            if (indexBezier >= 300)
+                indexBezier = 0;
+            let pointBezier = bezier[indexBezier];
+            animatedSprite.x = pointBezier.X;
+            animatedSprite.y = pointBezier.Y;
+            indexBezier++;
+            
+
+            requestAnimationFrame(Update);
+        };
+        
+
+
+</script>
+</body>
+</html>
